@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str
     aws_region: str
     bucket_name: str
+    api_key: str
 
     class Config:
         env_file = ".env"
