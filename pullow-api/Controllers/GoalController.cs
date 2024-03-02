@@ -361,6 +361,19 @@ namespace pullow_api.Controllers
 
                 using (HttpClient client = new HttpClient())
                 {
+                    // Set request headers
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
+                    client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+                    client.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+                    client.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
+                    client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                    client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                    client.DefaultRequestHeaders.Add("Priority", "u=1, i");
 
                     foreach (var key in resultDictionary.Keys)
                     {
@@ -370,19 +383,7 @@ namespace pullow_api.Controllers
                         // Data to be sent in the request body
                         string postData = $"customerId=1938&sector=&birthdate=06.02.2003&insuranceFeePaymentType=12&superGrossInsuranceFee={superGross}&netInsuranceFee=200&contractPeriod={key}&currency=AZN&calculatorCreditInput=";
 
-                        // Set request headers
-                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
-                        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
-                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
-                        client.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
-                        client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
-                        client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
-                        client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
-                        client.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
-                        client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-                        client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
-                        client.DefaultRequestHeaders.Add("Priority", "u=1, i");
+                        
 
                         // Create the HTTP content
                         HttpContent content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
@@ -395,8 +396,12 @@ namespace pullow_api.Controllers
                         {
                             // Read the response content
                             string responseContent = await response.Content.ReadAsStringAsync();
-                            dynamic jsonResponse = JsonConvert.DeserializeObject(responseContent);
-                            double hysInvestment = jsonResponse.data.hysInvestment;
+
+                            // Deserialize the response content into ResponseData class
+                            ResponseData responseData = JsonConvert.DeserializeObject<ResponseData>(responseContent);
+
+                            // Access the required properties
+                            double hysInvestment = responseData.Data.BeforeCreditCalculation.InsuranceAmountResult.HysInvestment;
 
                             if (hysInvestment > resultDictionary[key])
                             {
@@ -464,4 +469,47 @@ namespace pullow_api.Controllers
     {
         public Dictionary<string, int> Result { get; set; }
     }
+
+    public class InsuranceAmountResult
+    {
+        [JsonProperty("hysInvestment")]
+        public double HysInvestment { get; set; }
+
+        [JsonProperty("personalInvestment")]
+        public double PersonalInvestment { get; set; }
+
+        [JsonProperty("gainAmount")]
+        public double GainAmount { get; set; }
+
+        [JsonProperty("gainPercentage")]
+        public double GainPercentage { get; set; }
+    }
+
+    public class BeforeCreditCalculation
+    {
+        [JsonProperty("insuranceAmountResult")]
+        public InsuranceAmountResult InsuranceAmountResult { get; set; }
+    }
+
+    public class Data
+    {
+        [JsonProperty("beforeCreditCalculation")]
+        public BeforeCreditCalculation BeforeCreditCalculation { get; set; }
+    }
+
+    public class ResponseData
+    {
+        [JsonProperty("statusCode")]
+        public int StatusCode { get; set; }
+
+        [JsonProperty("isSucceeded")]
+        public bool IsSucceeded { get; set; }
+
+        [JsonProperty("messages")]
+        public string[] Messages { get; set; }
+
+        [JsonProperty("data")]
+        public Data Data { get; set; }
+    }
+
 }
