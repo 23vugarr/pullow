@@ -3,8 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import axios from "axios";
 
 export const Register = () => {
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
@@ -20,8 +19,7 @@ export const Register = () => {
 
         if(passwordError === '' && emailError === '' && passwordConfirmError === '') {
             await axios.post('api/Authentication/register', {
-                name: firstName,
-                surname: lastName,
+                fullName,
                 email,
                 password,
             }).then((response) => {
@@ -30,7 +28,7 @@ export const Register = () => {
                 }
             }).catch((error) => {
                 console.log(error);
-                if(error.request.status === 500) {
+                if(error.request.status === 400) {
                     setEmailError('User with this email already exists');
                 } else {
                     setEmailError('Something went wrong');
@@ -101,16 +99,10 @@ export const Register = () => {
                        onChange={onEmailChange}/>
                 <p className={'text-danger'}>{emailError}</p>
 
-                <label htmlFor="inputFirstName" className="sr-only">First Name</label>
+                <label htmlFor="inputFirstName" className="sr-only">Full Name</label>
                 <input type="text" id="inputFirstName" className="form-control"
-                       placeholder="First Name" required
-                       onChange={e => setFirstName(e.target.value)}/>
-                <p></p>
-
-                <label htmlFor="inputLastName" className="sr-only">Last Name</label>
-                <input type="text" id="inputLastName" className="form-control"
-                       placeholder="Last Name" required
-                       onChange={e => setLastName(e.target.value)}/>
+                       placeholder="Full Name" required
+                       onChange={e => setFullName(e.target.value)}/>
                 <p></p>
 
                 <label htmlFor="inputPassword" className="sr-only">Password</label>
