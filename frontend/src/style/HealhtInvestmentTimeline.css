@@ -3,7 +3,6 @@
     max-width: 1200px;
     margin: 40px auto;
     overflow-x: auto;
-    white-space: nowrap;
     position: relative;
     padding: 20px 0;
 }
@@ -14,7 +13,8 @@
 }
 
 .timeline {
-    display: inline-block;
+    display: flex;
+    align-items: flex-end;
     position: relative;
 }
 
@@ -29,12 +29,13 @@
     transform: translateY(-50%);
 }
 
-.milestone,
-.timeline-event {
-    display: inline-block;
+.milestone {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: flex-end;
     position: relative;
-    margin: 0 20px;
-    vertical-align: top;
+    padding: 0 20px;
+    height: 200px; /* Adjust height as needed */
 }
 
 .milestone .date,
@@ -45,21 +46,12 @@
     white-space: normal;
 }
 
-.milestone .investment-return {
-    justify-content: flex-end;
-}
-
-.milestone p {
-    height: 80px;
-    word-wrap: break-word;
-}
-
-.milestone:not(:first-child)::after {
+.milestone::after {
     content: '';
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
-    left: calc(50% - 14px);
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 24px;
     height: 24px;
     background: #4caf50;
@@ -68,30 +60,27 @@
 }
 
 .timeline-event {
-    transform: translateY(-50%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 20px;
+    height: 200px; /* Adjust height as needed */
 }
 
 .timeline-event img {
-    display: block;
-    max-width: 100px;
-    margin: 0 auto 10px auto;
+    width: 100px; /* Adjust width as needed */
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .event-details {
     text-align: center;
+    margin-top: auto;
 }
 
-.event-details h3 {
-    margin: 0;
-    color: #333;
-    font-size: 18px;
-}
-
+.event-details h3,
 .event-details p {
-    margin: 0;
-    color: #666;
+    margin: 5px 0; /* Provide some spacing */
 }
 
 /* Responsive adjustments */
@@ -102,4 +91,10 @@
         writing-mode: horizontal-tb;
         transform: rotate(0);
     }
+
+    .milestone,
+    .timeline-event {
+        height: auto; /* Adjust height for mobile */
+    }
 }
+
