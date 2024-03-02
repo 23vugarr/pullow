@@ -7,10 +7,10 @@ using pullow_api.Entities;
 
 namespace pullow_api
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {
         public DbSet<Goal> Goals { get; set; }
-        public DbSet<ApplicationUserGoal> ApplicationUserGoals { get; set; }
+        public DbSet<UserGoal> UserGoals { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
 
@@ -18,10 +18,11 @@ namespace pullow_api
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Goal>()
-                .HasMany(e => e.ApplicationUsers)
+                .HasMany(e => e.Users)
                 .WithMany(e => e.Goals)
-                .UsingEntity<ApplicationUserGoal>();
+                .UsingEntity<UserGoal>();
         }
 
     }

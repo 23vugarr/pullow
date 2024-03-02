@@ -38,7 +38,7 @@ namespace pullow_api.Authentication
             {
                 var authClaims = new List<Claim>
                 {
-                    new Claim("Id",user.Id),
+                    new Claim("Id",user.Id.ToString()),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };
 

@@ -2,10 +2,10 @@
 
 namespace pullow_api.Entities
 {
-    public class ApplicationUserGoal
+    public class UserGoal
     {
-        public ApplicationUser ApplicationUser { get; set; }
-        public Guid ApplicationUserId { get; set; }
+        public ApplicationUser User { get; set; }
+        public Guid UserId { get; set; }
         public Goal Goal { get; set; }
         public Guid GoalId { get; set; }
 

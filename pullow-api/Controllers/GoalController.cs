@@ -33,10 +33,10 @@ namespace pullow_api.Controllers
             }
 
 
-            var goals = await _context.ApplicationUserGoals.Where(applicationUserGoal =>  applicationUserGoal.ApplicationUserId == Guid.Parse(userId)).Select(applicationUserGoal => new { 
+            var goals = await _context.UserGoals.Where(UserGoal =>  UserGoal.UserId == Guid.Parse(userId)).Select(UserGoal => new { 
             
-                    Id = applicationUserGoal.Goal.Id,
-                    Title = applicationUserGoal.Goal.Title
+                    Id = UserGoal.Goal.Id,
+                    Title = UserGoal.Goal.Title
             }).ToListAsync();
 
 
@@ -54,10 +54,13 @@ namespace pullow_api.Controllers
             }
 
             
-            var applicationUserGoal = await _context.ApplicationUserGoals.Include(applicationUserGoal => applicationUserGoal.Goal).Where(applicationUserGoal => applicationUserGoal.GoalId == id && applicationUserGoal.ApplicationUserId == Guid.Parse(userId)).FirstOrDefaultAsync();
+            var userGoal = await _context.UserGoals.Include(UserGoal => UserGoal.Goal).Where(UserGoal => UserGoal.GoalId == id && UserGoal.UserId == Guid.Parse(userId)).FirstOrDefaultAsync();
+            if(userGoal == null)
+            {
+                return NotFound();
+            }
 
-
-            return Ok(applicationUserGoal.Goal);
+            return Ok(userGoal.Goal);
         }
 
 
@@ -78,10 +81,40 @@ namespace pullow_api.Controllers
                 return Unauthorized();
             }
 
-            var newGoal = new Goal { Id = Guid.NewGuid(), Title = model.Title, Url = model.Url, ApplicationUsers = new List<ApplicationUser>()};
-            newGoal.ApplicationUsers.Add(user);
+            var newGoal = new Goal { Id = Guid.NewGuid(), Title = model.Title, Url = model.Url, Users = new List<ApplicationUser>()};
+            newGoal.Users.Add(user);
 
             await _context.Goals.AddAsync(newGoal);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPost("{id:guid}/users")]
+        public async Task<IActionResult> AddUserToGoal(Guid id, Guid userId)
+        {
+
+            var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value;
+            if (userTokenId == null)
+            {
+                return Unauthorized();
+            }
+
+            var userGoal = await _context.UserGoals.Include(userGoal => userGoal.Goal).ThenInclude(goal => goal.Users).Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            if (userGoal == null)
+            {
+                return NotFound();
+            }
+
+            var userToBeAdded = await _userManager.FindByIdAsync(userId.ToString());
+
+            if(userToBeAdded == null)
+            {
+                return NotFound();
+            }
+
+            userGoal.Goal.Users.Add(userToBeAdded);
+
             await _context.SaveChangesAsync();
 
             return Ok();
