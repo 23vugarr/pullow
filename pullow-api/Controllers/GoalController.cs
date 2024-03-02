@@ -327,6 +327,8 @@ namespace pullow_api.Controllers
                 string apiUrl = "http://3.223.46.152/model/";
                 string jsonBody = $"{{\"city\": \"{regionForApi}\", \"price\": {userGoal.Goal.CachedMeanPrice}}}";
 
+                Dictionary<string, int> resultDictionary = new Dictionary<string, int>();
+
                 using (HttpClient client = new HttpClient())
                 {
                     client.DefaultRequestHeaders.Add("API_key", "test");
@@ -344,69 +346,7 @@ namespace pullow_api.Controllers
                         if (responseObject?.Data?.Result != null)
                         {
                             // Extract the result dictionary
-                            Dictionary<string, int> resultDictionary = responseObject.Data.Result;
-
-                            int? selectedMonth = null;
-
-
-                            using (HttpClient client2 = new HttpClient())
-                            {
-                                foreach(var key in resultDictionary.Keys)
-                                {
-
-                                }
-                                foreach(var key in resultDictionary.Keys)
-                                {
-                                    // URL to send the POST request
-                                    string url = "https://mylife.az/online-calculator/salary-converter-api/insurance-fee/insurance-amount";
-
-                                    // Data to be sent in the request body
-                                    string postData = $"customerId=1938&sector=&birthdate=06.02.2003&insuranceFeePaymentType=12&superGrossInsuranceFee={superGross}&netInsuranceFee=1&contractPeriod={key}&currency=AZN&calculatorCreditInput=";
-
-                                    // Set request headers
-                                    client2.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
-                                    client2.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
-                                    client2.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
-                                    client2.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
-                                    client2.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
-                                    client2.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
-                                    client2.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
-                                    client2.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
-                                    client2.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
-                                    client2.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
-                                    client2.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
-                                    client2.DefaultRequestHeaders.Add("Priority", "u=1, i");
-
-                                    // Create the HTTP content
-                                    HttpContent content2 = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
-
-                                    // Send the POST request
-                                    HttpResponseMessage response2 = await client2.PostAsync(url, content2);
-
-                                    // Check if the response is successful
-                                    if (response2.IsSuccessStatusCode)
-                                    {
-                                        // Read the response content
-                                        string responseContent = await response2.Content.ReadAsStringAsync();
-                                        dynamic jsonResponse = JsonConvert.DeserializeObject(responseContent);
-                                        double hysInvestment = jsonResponse.data.hysInvestment;
-
-                                        if(hysInvestment > resultDictionary[key])
-                                        {
-                                            selectedMonth = Convert.ToInt32(key);
-                                            userGoal.Goal.CachedDuration = selectedMonth;
-                                            userGoal.Goal.CachedExpectedPrice = resultDictionary[key];
-
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        return BadRequest();
-                                    }
-                                }
-                                
-                            }
+                             resultDictionary = responseObject.Data.Result;
 
                         }
                         else
@@ -416,8 +356,63 @@ namespace pullow_api.Controllers
                     }
                 }
 
+                int? selectedMonth = null;
 
 
+                using (HttpClient client = new HttpClient())
+                {
+
+                    foreach (var key in resultDictionary.Keys)
+                    {
+                        // URL to send the POST request
+                        string url = "https://mylife.az/online-calculator/salary-converter-api/insurance-amount";
+
+                        // Data to be sent in the request body
+                        string postData = $"customerId=1938&sector=&birthdate=06.02.2003&insuranceFeePaymentType=12&superGrossInsuranceFee={superGross}&netInsuranceFee=200&contractPeriod={key}&currency=AZN&calculatorCreditInput=";
+
+                        // Set request headers
+                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
+                        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+                        client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+                        client.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
+                        client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
+                        client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+                        client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+                        client.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
+                        client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                        client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                        client.DefaultRequestHeaders.Add("Priority", "u=1, i");
+
+                        // Create the HTTP content
+                        HttpContent content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                        // Send the POST request
+                        HttpResponseMessage response = await client.PostAsync(url, content);
+
+                        // Check if the response is successful
+                        if (response.IsSuccessStatusCode)
+                        {
+                            // Read the response content
+                            string responseContent = await response.Content.ReadAsStringAsync();
+                            dynamic jsonResponse = JsonConvert.DeserializeObject(responseContent);
+                            double hysInvestment = jsonResponse.data.hysInvestment;
+
+                            if (hysInvestment > resultDictionary[key])
+                            {
+                                selectedMonth = Convert.ToInt32(key);
+                                userGoal.Goal.CachedDuration = selectedMonth;
+                                userGoal.Goal.CachedExpectedPrice = resultDictionary[key];
+
+                            }
+
+                        }
+                        else
+                        {
+                            return BadRequest();
+                        }
+                    }
+                }
             }
 
             await _context.SaveChangesAsync();
