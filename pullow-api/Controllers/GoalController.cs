@@ -54,13 +54,13 @@ namespace pullow_api.Controllers
             }
 
             
-            var userGoal = await _context.UserGoals.Include(UserGoal => UserGoal.Goal).Where(UserGoal => UserGoal.GoalId == id && UserGoal.UserId == Guid.Parse(userId)).FirstOrDefaultAsync();
+            var userGoal = await _context.UserGoals.Include(UserGoal => UserGoal.Goal).ThenInclude(goal => goal.Users).Where(UserGoal => UserGoal.GoalId == id && UserGoal.UserId == Guid.Parse(userId)).FirstOrDefaultAsync();
             if(userGoal == null)
             {
                 return NotFound();
             }
 
-            var goal = new { Id = userGoal.Goal.Id, Title = userGoal.Goal.Title, Url = userGoal.Goal.Url, Duration = userGoal.Goal.CachedDuration, MeanPrice = userGoal.Goal.CachedMeanPrice};
+            var goal = await _context.Goals.Where(goal => goal.Id == id).Select(goal => new { Id = userGoal.Goal.Id, Title = userGoal.Goal.Title, Url = userGoal.Goal.Url, Duration = userGoal.Goal.CachedDuration, MeanPrice = userGoal.Goal.CachedMeanPrice, Users = goal.UserGoals.Select(userGoal => new {Id = userGoal.UserId, Name = userGoal.User.FullName, SavingAmount = userGoal.SavingAmount, MonthlyAmount = userGoal.MonthlyAmount}) }).FirstOrDefaultAsync();
             return Ok(goal);
         }
 
@@ -92,7 +92,7 @@ namespace pullow_api.Controllers
         }
 
         [HttpPost("{id:guid}/users")]
-        public async Task<IActionResult> AddUserToGoal(Guid id, Guid userId)
+        public async Task<IActionResult> AddUserToGoal(Guid id, [FromBody] AddUserToGoalDto model)
         {
 
             var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value;
@@ -101,21 +101,22 @@ namespace pullow_api.Controllers
                 return Unauthorized();
             }
 
-            var userGoal = await _context.UserGoals.Include(userGoal => userGoal.Goal).ThenInclude(goal => goal.Users).Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            var userGoal = await _context.UserGoals.Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
             if (userGoal == null)
             {
                 return NotFound();
             }
 
-            var userToBeAdded = await _userManager.FindByIdAsync(userId.ToString());
+            var userToBeAdded = await _userManager.FindByIdAsync(model.UserId.ToString());
 
             if(userToBeAdded == null)
             {
                 return NotFound();
             }
 
-            userGoal.Goal.Users.Add(userToBeAdded);
+            var newUserGoal = new UserGoal { GoalId = id, User = userToBeAdded, MonthlyAmount = model.MonthlyAmount, SavingAmount = model.SavingAmount };
 
+            await _context.UserGoals.AddAsync(newUserGoal);
             await _context.SaveChangesAsync();
 
             return Ok();
@@ -127,5 +128,12 @@ namespace pullow_api.Controllers
         public string Title { get; set; }
         public string Url { get; set; }
 
+    }
+
+    public class AddUserToGoalDto
+    {
+        public Guid UserId { get; set; }
+        public int SavingAmount { get; set; }
+        public int MonthlyAmount { get; set; }
     }
 }
