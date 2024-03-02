@@ -6,7 +6,7 @@ from app.routers.model import router as ModelRouter
 
 def create_application() -> FastAPI:
     application = FastAPI(
-        title="Adlet",
+        title="Pullow",
         description="Price Prediction API",
         version="b0.1.0",
         docs_url=None,
