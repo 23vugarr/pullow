@@ -16,3 +16,6 @@ COPY . .
 RUN poetry install
 
 CMD ["poetry", "run", "uvicorn", "--host","0.0.0.0", "--port", "80", "main:app", "--reload"]
+
+# docker build -t price_prediction .
+# docker run -p 80 --name price_prediction_api -d price_prediction
