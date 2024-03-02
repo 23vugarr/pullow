@@ -29,6 +29,17 @@
     transform: translateY(-50%);
 }
 
+.timeline-reverse::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, #af4c4c 0%, #c34a4a 100%);
+    transform: translateY(-50%);
+}
+
 .milestone {
     display: inline-flex;
     flex-direction: column;

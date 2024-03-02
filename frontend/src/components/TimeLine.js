@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import {getAccessToken, getDecodedAccessToken} from "../common/jwtCommon";
-import {useNavigate, useParams} from "react-router-dom";
+import {getAccessToken} from "../common/jwtCommon";
+import {useNavigate} from "react-router-dom";
 import {GoalModal} from "./modals/AddGoalModal";
 import HealthInvestmentTimeline from "./HealthInvestmentTimeline";
 import {MemberModal} from "./modals/AddMemberModal";
+import {availableTimeLines} from "./helper/TimeLineData";
 
 export const TimeLine = () => {
 
@@ -13,13 +14,16 @@ export const TimeLine = () => {
     const [load, setLoad] = useState(false);
     const [error, setError] = useState('');
 
+    const [goal, setGoal] = useState({})
     const [goals, setGoals] = useState([]);
     const [members, setMembers] = useState([]);
+    const [timeLineIndex, setTimeLineIndex] = useState([]);
+
     const [showGoalModal, setShowGoalModal] = useState(false);
     const [showMemberModal, setShowMemberModal] = useState(false);
 
     useEffect(() => {
-        if(!load) {
+        if (!load) {
             const onPageLoad = async () => {
                 await loadGoals()
                 await loadMembers()
@@ -35,13 +39,18 @@ export const TimeLine = () => {
     })
 
     const loadGoals = async () => {
-        await axios.get(`api/goal`,{
+        await axios.get(`api/goal`, {
             headers: {
                 Authorization: `Bearer ${getAccessToken()}`
             }
         }).then((response) => {
-            if(response.status === 200) {
+            if (response.status === 200) {
                 setGoals(response.data)
+                if (goal === undefined || goal === null || goal.id === undefined || goal.id === null) {
+                    if (response.data.length > 0) {
+                        loadGoal(response.data[0].id)
+                    }
+                }
             } else {
                 setError('Something went wrong');
             }
@@ -50,21 +59,44 @@ export const TimeLine = () => {
         });
     }
 
-    const loadMembers = async () => {
-        await axios.get(`api/member`,{
+    const loadGoal = async (id) => {
+        await axios.get(`api/goal/${id}`, {
             headers: {
                 Authorization: `Bearer ${getAccessToken()}`
             }
         }).then((response) => {
-            if(response.status === 200) {
-                setMembers(response.data);
-                console.log(response.data);
+            if (response.status === 200) {
+                setGoal(response.data)
+                handleTimeLineChange(response.data)
             } else {
                 setError('Something went wrong');
             }
-        }).catch((error) => {
+        })
+          .catch((error) => {
             setError('Something went wrong');
-        });
+          });
+    }
+
+    const loadMembers = async () => {
+        // await axios.get(`api/member`, {
+        //     headers: {
+        //         Authorization: `Bearer ${getAccessToken()}`
+        //     }
+        // }).then((response) => {
+        //     if (response.status === 200) {
+        //         setMembers(response.data);
+        //         console.log(response.data);
+        //     } else {
+        //         setError('Something went wrong');
+        //     }
+        // }).catch((error) => {
+        //     setError('Something went wrong');
+        // });
+        setMembers([{
+            title: "Ali Maharramli",
+            currentSaving: 1000,
+            monthlyPayment: 100
+        }])
     }
 
     const handleAddGoal = () => {
@@ -103,16 +135,34 @@ export const TimeLine = () => {
         setShowMemberModal(false);
     };
 
+    const handleGoalChange = async (goalSelection) => {
+        await loadGoal(goalSelection.target.value);
+    }
+
+    const handleMemberChange = async (memberSelection) => {
+        await loadGoal(memberSelection.target.value);
+    }
+
+    const handleTimeLineChange = async (goal) => {
+        let ind = 0
+        console.log(goal.title)
+        if (goal.title.toUpperCase().indexOf("NARIMANOV") !== -1) {
+            ind = 0
+        } else if (goal.title.toUpperCase().indexOf("BMW") !== -1) {
+            ind = 1
+        } else {
+            ind =  Math.floor(Math.random()*100) % availableTimeLines.length
+        }
+        setTimeLineIndex(ind)
+    }
+
     return (
         <div className="container">
             <div className="header">
                 <div className="h1" style={{marginLeft: "50%", marginTop: "1%"}}>TimeLine</div>
             </div>
             <div className="content">
-                <div className="header">
-                    <div className="page-name">{customerName}</div>
-                    <div className="company-name">{companyName}</div>
-                </div>
+                {/*<SearchableDropdown/>*/}
                 <div className="table-section">
                     <h2>Members</h2>
                     <table>
@@ -124,18 +174,29 @@ export const TimeLine = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {goals.map((goal, index) => (
+                        {members.map((member, index) => (
                             <tr key={index} className="table-item clickable"
-                                // onClick={ () => navigate(`/customers/${id}/services/${service.id}`)}
+                                // onClick={ () => navigate()}
                             >
-                                <td> {goal.title}</td>
+                                <td> {member.title}</td>
+                                <td> {member.currentSaving}</td>
+                                <td> {member.monthlyPayment}</td>
                             </tr>
                         ))}
                         </tbody>
                     </table>
+                    {/*<select name="memberId"*/}
+                    {/*        className="form-select form-select-lg"*/}
+                    {/*        style={{width: "70%"}}*/}
+                    {/*        onChange={(e) => handleMemberChange(e)}>*/}
+                    {/*    {goals.map((member) => (*/}
+                    {/*        <option key={member.id} value={member.id}>*/}
+                    {/*            {member.title}*/}
+                    {/*        </option>*/}
+                    {/*    ))}*/}
+                    {/*</select>*/}
                     <button className="add-obj-btn" onClick={handleAddMember}>Add Member</button>
                     <MemberModal
-                        servers={members}
                         show={showMemberModal}
                         onClose={handleCloseMemberModal}
                         onSubmit={handleSubmitMember}
@@ -143,26 +204,20 @@ export const TimeLine = () => {
                 </div>
                 <div className="table-section">
                     <h2>Goals</h2>
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Status</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {goals.map((goal, index) => (
-                            <tr key={index} className="table-item clickable"
-                                // onClick={ () => navigate(`/customers/${id}/services/${service.id}`)}
-                            >
-                                <td> {goal.title}</td>
-                            </tr>
+                    <select name="goalId"
+                            className="form-select form-select-lg"
+                            style={{width: "70%"}}
+                            onChange={(e) => handleGoalChange(e)}>
+                        {goals.map((goal) => (
+                            <option key={goal.id} value={goal.id}>
+                                {goal.title}
+                            </option>
                         ))}
-                        </tbody>
-                    </table>
-                    <button className="add-obj-btn" onClick={handleAddGoal}>Add Goal</button>
+                    </select>
+                    <div>
+                        <button className="add-obj-btn" onClick={handleAddGoal}>Add Goal</button>
+                    </div>
                     <GoalModal
-                        servers={members}
                         show={showGoalModal}
                         onClose={handleCloseGoalModal}
                         onSubmit={handleSubmitGoal}
@@ -170,7 +225,7 @@ export const TimeLine = () => {
                 </div>
 
             </div>
-                <HealthInvestmentTimeline/>
+            <HealthInvestmentTimeline timeLine={timeLineIndex}/>
         </div>
     )
 }

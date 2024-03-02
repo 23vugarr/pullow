@@ -40,22 +40,6 @@ export const Navbar = () => {
       </li>
   )
 
-  const customersLink = (
-      <li className="nav-item" key={`login-${generateRandomInteger(10000)}`}>
-          <Link to="/customers" className="nav-link">
-              Customers
-          </Link>
-      </li>
-  )
-
-  const paymentsLink = (
-      <li className="nav-item" key={`pay-${generateRandomInteger(10000)}`}>
-          <Link to="/payments" className="nav-link">
-              Payments
-          </Link>
-      </li>
-  )
-
   const logoutLink = (
       <li className="nav-item" key={`logout-${generateRandomInteger(10000)}`}>
         <a href="#" onClick={logout} className="nav-link">
@@ -68,8 +52,6 @@ export const Navbar = () => {
     let links = [];
     if (isAuthenticated()) {
       links.push(homeLink);
-      links.push(customersLink);
-      links.push(paymentsLink);
       links.push(logoutLink);
     } else {
       links.push(registerLink)
