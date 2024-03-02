@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,9 @@ using pullow_api;
 using pullow_api.Authentication;
 using pullow_api.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
+using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace pullow_api.Controllers
 {
@@ -82,7 +86,60 @@ namespace pullow_api.Controllers
                 return Unauthorized();
             }
 
-            var newGoal = new Goal { Id = Guid.NewGuid(), Title = model.Title, Url = model.Url, Users = new List<ApplicationUser>()};
+            Uri uri = new Uri(model.Url);
+            var host = uri.Host switch
+            {
+                "www.turbo.az" => "turbo",
+                "turbo.az" => "turbo",
+                "www.bina.az" => "bina",
+                "bina.az" => "bina",
+                _ => throw new ArgumentException("Please enter correct url type!")
+            };
+
+            int mean = 0;
+
+            using (WebClient client = new WebClient())
+            {
+                string htmlCode = client.DownloadString(model.Url);
+                HtmlDocument doc = new HtmlDocument();
+
+                doc.LoadHtml(htmlCode);
+
+                
+                if(host == "turbo")
+                {
+                    var productList = doc.DocumentNode.SelectSingleNode("//p[normalize-space(text())='ELANLAR']/../..").NextSibling.LastChild;
+                    
+                    var sum = 0;
+                    var count = 0;
+                    foreach(var product in productList.ChildNodes)
+                    {
+                        var isDollar = false;
+                        var priceStr = product.SelectSingleNode(".//div[contains(concat(' ', @class, ' '),'product-price')]")?.InnerText;
+                        if (priceStr == null)
+                        {
+                            priceStr = product.SelectSingleNode(".//div[contains(concat(' ', @class, ' '),'product-price') and not(span)]")?.InnerText;
+                        }
+                        if (priceStr.Contains("$"))
+                        {
+                            isDollar = true;
+                        }
+                        string cleanedInput = Regex.Replace(priceStr, "[^0-9 ]", "");
+                        cleanedInput = cleanedInput.Replace(" ", "");
+
+                        var realPrice = Int32.Parse(cleanedInput);
+
+                        realPrice = isDollar ? Convert.ToInt32(realPrice * 1.7 ): realPrice;
+
+                        sum += realPrice;
+                        count += 1;
+                    }
+                    mean = Convert.ToInt32(sum / count);
+                }
+
+            }
+
+            var newGoal = new Goal { Id = Guid.NewGuid(), Title = model.Title, Url = model.Url, Users = new List<ApplicationUser>(), CachedMeanPrice = mean};
             newGoal.Users.Add(user);
 
             await _context.Goals.AddAsync(newGoal);
@@ -121,6 +178,32 @@ namespace pullow_api.Controllers
 
             return Ok();
         }
+
+        [HttpPut("{id:guid}/users/{userId:guid}")]
+        public async Task<IActionResult> ChangeUserParams(Guid id,Guid userId, [FromBody] ChangeUserParamsDto model)
+        {
+
+            var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value;
+            if (userTokenId == null)
+            {
+                return Unauthorized();
+            }
+
+            var userGoal = await _context.UserGoals.Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            if (userGoal == null)
+            {
+                return NotFound();
+            }
+
+            var userGoalToBeChanged = await _context.UserGoals.Where(userGoal => userGoal.GoalId == id && userGoal.UserId == userId).FirstOrDefaultAsync();
+
+            userGoalToBeChanged.MonthlyAmount = model.MonthlyAmount;
+            userGoalToBeChanged.SavingAmount = model.SavingAmount;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 
     public class CreateGoalDto
@@ -128,6 +211,13 @@ namespace pullow_api.Controllers
         public string Title { get; set; }
         public string Url { get; set; }
 
+    }
+
+
+    public class ChangeUserParamsDto
+    {
+        public int SavingAmount { get; set; }
+        public int MonthlyAmount { get; set; }
     }
 
     public class AddUserToGoalDto
