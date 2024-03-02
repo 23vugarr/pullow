@@ -70,7 +70,8 @@ namespace pullow_api.Authentication
             ApplicationUser user = new ApplicationUser()
             {
                 Email = model.Email,
-                UserName = model.FullName,
+                FullName = model.FullName,
+                UserName= model.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
             };
 

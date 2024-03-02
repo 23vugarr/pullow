@@ -60,7 +60,8 @@ namespace pullow_api.Controllers
                 return NotFound();
             }
 
-            return Ok(userGoal.Goal);
+            var goal = new { Id = userGoal.Goal.Id, Title = userGoal.Goal.Title, Url = userGoal.Goal.Url, Duration = userGoal.Goal.CachedDuration, MeanPrice = userGoal.Goal.CachedMeanPrice};
+            return Ok(goal);
         }
 
 
