@@ -4,7 +4,4 @@ export { Layout } from './general/Layout';
 export { Unauthorized } from './general/Unauthorized';
 export { Missing } from './general/Missing';
 export { Home } from './Home';
-export { Payments } from './Payments';
-export { Customers } from './Customers';
-export { Customer } from './Customer';
-export { Server } from './Server';
+export { TimeLine } from './TimeLine';
