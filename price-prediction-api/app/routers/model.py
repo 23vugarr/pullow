@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.post("/")
-async def test(mlbase: MlBase, api_key: APIKey = Depends(get_api_key)):
+async def predict_result(mlbase: MlBase, api_key: APIKey = Depends(get_api_key)):
     try:
         sq_price = ModelUtily.get_square(price=mlbase.price, city=mlbase.city)
         future_price = ModelUtily.predict_and_adjust(city=mlbase.city, type_=0, months_to_predict=120)
