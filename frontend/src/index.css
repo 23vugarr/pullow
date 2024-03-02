@@ -1,0 +1,189 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.split {
+  text-align: center;
+  font-size: 30px;
+  color: white;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width:50%;
+}
+
+/* Control the left side */
+.left {
+  left: 0;
+}
+
+/* Control the right side */
+.right {
+  right: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.table-section {
+  border: 2px solid black;
+  padding: 20px;
+  margin: 10px;
+  min-height: 500px;
+  min-width: 500px;
+}
+
+.table-item {
+  border: 1px solid black;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.resolved {
+  font-size: larger;
+  color: green;
+}
+
+.not-resolved {
+  color: red;
+  font-size: larger;
+}
+
+.payments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.company-name, .page-name {
+  font-size: 30px;
+  color: black;
+}
+
+.payments-section {
+  padding: 20px;
+
+}
+
+.payment-details span {
+  margin-right: 10px;
+}
+
+button {
+  background-color: #006400; /* Dark green */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.clickable:hover {
+  cursor: pointer;
+  box-shadow: #282c34 0 0 10px;
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+}
+
+.dot {
+  height: 25px;
+  width: 25px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.modal-box {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 70%;
+  max-width: 500px;
+}
+
+.modal-box input[type="text"],
+.modal-box input[type="number"],
+.modal-box select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Form Submit Button */
+.modal-box button[type="submit"] {
+  width: 100%;
+  padding: 10px;
+  background-color: #006400; /* Dark green */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-box button[type="submit"]:hover {
+  background-color: #004d40; /* Darker green */
+}
+
+
+.modal-box select {
+  display: block;
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.5;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  max-width: 100%; /* Ensures select box does not exceed its parent's width */
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: right 0.7em top 50%;
+  background-size: 1.5em auto;
+}
+
+/* For custom dropdown arrow */
+.modal-box select {
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg width="12" height="12" viewBox="0 0 4 5" xmlns="http://www.w3.org/2000/svg"><path fill="%23555" d="M2 0L0 2h4z"/></svg>');
+}
