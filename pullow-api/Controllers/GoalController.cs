@@ -127,12 +127,46 @@ namespace pullow_api.Controllers
                         string cleanedInput = Regex.Replace(priceStr, "[^0-9 ]", "");
                         cleanedInput = cleanedInput.Replace(" ", "");
 
-                        var realPrice = Int32.Parse(cleanedInput);
 
-                        realPrice = isDollar ? Convert.ToInt32(realPrice * 1.7 ): realPrice;
+                        if (Int32.TryParse(cleanedInput, out int realPrice))
+                        {
+                            realPrice = isDollar ? Convert.ToInt32(realPrice * 1.7) : realPrice;
 
-                        sum += realPrice;
-                        count += 1;
+                            sum += realPrice;
+                            count += 1;
+                        }
+                    }
+                    mean = Convert.ToInt32(sum / count);
+                }
+
+                else if (host == "bina")
+                {
+                    var productList = doc.DocumentNode.SelectSingleNode("//div[normalize-space(text())='ELANLAR']/..")?.NextSibling;
+
+                    var sum = 0;
+                    var count = 0;
+                    foreach (var product in productList.ChildNodes)
+                    {
+                        var isDollar = false;
+
+                        var priceVal = product.SelectSingleNode(".//span[contains(concat(' ', @class, ' '),'price-val')]")?.InnerText ?? "";
+                        var priceCur = product.SelectSingleNode(".//span[contains(concat(' ', @class, ' '),'price-cur')]")?.InnerText ?? "";
+
+                        if (priceCur == "USD" || priceCur == "$")
+                        {
+                            isDollar = true;
+                        }
+
+                        string cleanedInput = Regex.Replace(priceVal, "[^0-9 ]", "");
+                        cleanedInput = cleanedInput.Replace(" ", "");
+
+                        if (Int32.TryParse(cleanedInput, out int realPrice))
+                        {
+                            realPrice = isDollar ? Convert.ToInt32(realPrice * 1.7) : realPrice;
+
+                            sum += realPrice;
+                            count += 1;
+                        }
                     }
                     mean = Convert.ToInt32(sum / count);
                 }
@@ -199,6 +233,29 @@ namespace pullow_api.Controllers
 
             userGoalToBeChanged.MonthlyAmount = model.MonthlyAmount;
             userGoalToBeChanged.SavingAmount = model.SavingAmount;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+
+        [HttpPost("{id:guid}/strategy")]
+        public async Task<IActionResult> UpsertGoalStrategy(Guid id, [FromBody] AddUserToGoalDto model)
+        {
+
+            var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value;
+            if (userTokenId == null)
+            {
+                return Unauthorized();
+            }
+
+            var userGoal = await _context.UserGoals.Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            if (userGoal == null)
+            {
+                return NotFound();
+            }
+
 
             await _context.SaveChangesAsync();
 

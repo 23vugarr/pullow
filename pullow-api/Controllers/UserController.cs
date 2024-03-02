@@ -37,5 +37,26 @@ namespace pullow_api.Controllers
 
             return Ok(users);
         }
+
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto model)
+        {
+            var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value ?? String.Empty;
+            if (userTokenId == null)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.Where(user => user.Id == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            user.GrossSalary = model.GrossSalary;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+    }
+
+    public class UpdateUserDto
+    {
+        public int GrossSalary { get; set; }
     }
 }
