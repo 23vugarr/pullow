@@ -4,11 +4,14 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using pullow_api;
 using pullow_api.Authentication;
 using pullow_api.Entities;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -241,7 +244,7 @@ namespace pullow_api.Controllers
 
 
         [HttpPost("{id:guid}/strategy")]
-        public async Task<IActionResult> UpsertGoalStrategy(Guid id, [FromBody] AddUserToGoalDto model)
+        public async Task<IActionResult> UpsertGoalStrategy(Guid id)
         {
 
             var userTokenId = this.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == "Id")?.Value;
@@ -250,16 +253,188 @@ namespace pullow_api.Controllers
                 return Unauthorized();
             }
 
-            var userGoal = await _context.UserGoals.Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
+            var userGoal = await _context.UserGoals.Include(userGoal => userGoal.Goal).Where(userGoal => userGoal.GoalId == id && userGoal.UserId == Guid.Parse(userTokenId)).FirstOrDefaultAsync();
             if (userGoal == null)
             {
                 return NotFound();
             }
 
+            var user = await _userManager.FindByIdAsync(userTokenId);
+
+            double superGross = 0;
+
+            using (HttpClient client = new HttpClient())
+            {
+                // URL to send the POST request
+                string url = "https://mylife.az/online-calculator/salary-converter-api/insurance-fee/net-to-gross";
+
+                // Data to be sent in the request body
+                string postData = $"sector=&customerId=1938&grossSalary={user.GrossSalary}&netInsuranceFee={userGoal.MonthlyAmount}&currency=AZN&netSalary=10";
+
+                // Set request headers
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
+                client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+                client.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+                client.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
+                client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                client.DefaultRequestHeaders.Add("Priority", "u=1, i");
+
+                // Create the HTTP content
+                HttpContent content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                // Send the POST request
+                HttpResponseMessage response = await client.PostAsync(url, content);
+
+                // Check if the response is successful
+                if (response.IsSuccessStatusCode)
+                {
+                    // Read the response content
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    dynamic jsonResponse = JsonConvert.DeserializeObject(responseContent);
+                    superGross = jsonResponse.data.superGrossInsuranceFee;
+
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+
+            Dictionary<string, string> latinToAzeri = new Dictionary<string, string>
+            {
+                {"nizami", "Nizami" },
+                { "yasamal", "Yasamal"},
+                { "sebail", "Səbail" },
+                { "xetai", "Xətai" },
+                { "sabuncu", "Sabunçu" },
+                { "nesimi", "Nəsimi" },
+                { "qaradag", "Qaradağ" },
+                { "bineqedi", "Binəqədi" },
+                { "nerimanov", "Nərimanov" }
+            };
+
+            var regionForApi = FindMatch(userGoal.Goal.Url, latinToAzeri);
+
+            if(regionForApi != null)
+            {
+
+                string apiUrl = "http://3.223.46.152/model/";
+                string jsonBody = $"{{\"city\": \"{regionForApi}\", \"price\": {userGoal.Goal.CachedMeanPrice}}}";
+
+                Dictionary<string, int> resultDictionary = new Dictionary<string, int>();
+
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("API_key", "test");
+
+                    StringContent content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+
+                    HttpResponseMessage response = await client.PostAsync(apiUrl, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        var responseObject = JsonConvert.DeserializeObject<ResponseObject>(responseBody);
+
+                        // Check if data is not null and contains result
+                        if (responseObject?.Data?.Result != null)
+                        {
+                            // Extract the result dictionary
+                             resultDictionary = responseObject.Data.Result;
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("No result found in the response.");
+                        }
+                    }
+                }
+
+                int? selectedMonth = null;
+
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Set request headers
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"121\", \"Not A(Brand\";v=\"99\"");
+                    client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+                    client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+                    client.DefaultRequestHeaders.Add("Origin", "https://mylife.az");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
+                    client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
+                    client.DefaultRequestHeaders.Add("Referer", "https://mylife.az/onlineapp");
+                    client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+                    client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9");
+                    client.DefaultRequestHeaders.Add("Priority", "u=1, i");
+
+                    foreach (var key in resultDictionary.Keys)
+                    {
+                        // URL to send the POST request
+                        string url = "https://mylife.az/online-calculator/salary-converter-api/insurance-amount";
+
+                        // Data to be sent in the request body
+                        string postData = $"customerId=1938&sector=&birthdate=06.02.2003&insuranceFeePaymentType=12&superGrossInsuranceFee={superGross}&netInsuranceFee=200&contractPeriod={key}&currency=AZN&calculatorCreditInput=";
+
+                        
+
+                        // Create the HTTP content
+                        HttpContent content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+                        // Send the POST request
+                        HttpResponseMessage response = await client.PostAsync(url, content);
+
+                        // Check if the response is successful
+                        if (response.IsSuccessStatusCode)
+                        {
+                            // Read the response content
+                            string responseContent = await response.Content.ReadAsStringAsync();
+
+                            // Deserialize the response content into ResponseData class
+                            ResponseData responseData = JsonConvert.DeserializeObject<ResponseData>(responseContent);
+
+                            // Access the required properties
+                            double hysInvestment = responseData.Data.BeforeCreditCalculation.InsuranceAmountResult.HysInvestment;
+
+                            if (hysInvestment > resultDictionary[key])
+                            {
+                                selectedMonth = Convert.ToInt32(key);
+                                userGoal.Goal.CachedDuration = selectedMonth;
+                                userGoal.Goal.CachedExpectedPrice = resultDictionary[key];
+
+                            }
+
+                        }
+                        else
+                        {
+                            return BadRequest();
+                        }
+                    }
+                }
+            }
 
             await _context.SaveChangesAsync();
 
             return Ok();
+        }
+
+        static string FindMatch(string url, Dictionary<string, string> latinToAzeri)
+        {
+            foreach (var key in latinToAzeri.Keys)
+            {
+                if (url.Contains(key))
+                {
+                    return latinToAzeri[key];
+                }
+            }
+            return null;
         }
     }
 
@@ -283,4 +458,58 @@ namespace pullow_api.Controllers
         public int SavingAmount { get; set; }
         public int MonthlyAmount { get; set; }
     }
+
+    public class ResponseObject
+    {
+        public DataObject Data { get; set; }
+        public object Detail { get; set; }
+    }
+
+    public class DataObject
+    {
+        public Dictionary<string, int> Result { get; set; }
+    }
+
+    public class InsuranceAmountResult
+    {
+        [JsonProperty("hysInvestment")]
+        public double HysInvestment { get; set; }
+
+        [JsonProperty("personalInvestment")]
+        public double PersonalInvestment { get; set; }
+
+        [JsonProperty("gainAmount")]
+        public double GainAmount { get; set; }
+
+        [JsonProperty("gainPercentage")]
+        public double GainPercentage { get; set; }
+    }
+
+    public class BeforeCreditCalculation
+    {
+        [JsonProperty("insuranceAmountResult")]
+        public InsuranceAmountResult InsuranceAmountResult { get; set; }
+    }
+
+    public class Data
+    {
+        [JsonProperty("beforeCreditCalculation")]
+        public BeforeCreditCalculation BeforeCreditCalculation { get; set; }
+    }
+
+    public class ResponseData
+    {
+        [JsonProperty("statusCode")]
+        public int StatusCode { get; set; }
+
+        [JsonProperty("isSucceeded")]
+        public bool IsSucceeded { get; set; }
+
+        [JsonProperty("messages")]
+        public string[] Messages { get; set; }
+
+        [JsonProperty("data")]
+        public Data Data { get; set; }
+    }
+
 }
